@@ -1,0 +1,31 @@
+async participantsUpdate({ jid, participants, action }) {
+    let chat = global.db.data.chats[jid] || {}
+    let text = ''
+    switch (action) {
+      case 'add':
+      case 'remove':
+        if (chat.welcome) {
+          let groupMetadata = await this.groupMetadata(jid)
+          for (let user of participants) {
+            if (user.includes(this.user.jid)) return // biar ngga nyambut diri sendiri, kalo simulasi harus tag yang lain
+            let pp = './src/avatar_contact.png'
+            try {
+              pp = await this.getProfilePicture(user)
+            } catch (e) {
+            } finally {
+              text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'selamat datang, @user!').replace('@subject', this.getName(jid)).replace('@desc', groupMetadata.desc ? String.fromCharCode(8206).repeat(4001) + groupMetadata.desc : '') :
+                (chat.sBye || this.bye || conn.bye || 'sampai jumpa, @user!')).replace(/@user/g, '@' + user.split('@')[0])
+              await this.sendButtonLoc(jid, action === 'add' ? fla + 'Welcome' : fla + 'Goodbye', text, wm, action === 'add' ? 'Selamat Datang' : 'Sampai Jumpa', 'ariffb')
+            }
+          }
+        }
+        break
+      case 'promote':
+        text = (chat.sPromote || this.spromote || conn.spromote || '@user sekarang admin')
+      case 'demote':
+        if (!text) text = (chat.sDemote || this.sdemote || conn.sdemote || '@user sekarang bukan admin')
+        text = text.replace(/@user/g, '@' + participants[0].split('@')[0])
+        if (chat.detect) this.reply(jid, text)
+        break
+    }
+  }
